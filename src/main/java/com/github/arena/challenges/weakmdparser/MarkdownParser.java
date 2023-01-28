@@ -2,79 +2,101 @@ package com.github.arena.challenges.weakmdparser;
 
 public class MarkdownParser {
 
-    String parse(String markdown) {
+    String parse(final String markdown) {
+
         String[] lines = markdown.split("\n");
-        String result = "";
-        boolean activeList = false;
+        StringBuilder resultHtml = new StringBuilder();
+        boolean isActiveList = false;
 
-        for (int i = 0; i < lines.length; i++) {
+        for (String lineOfMarkdown : lines) {
 
-            String theLine = ph(lines[i]);
-
-            if (theLine == null) {
-                theLine = li(lines[i]);
+            String parsedLine = parseHeader(lineOfMarkdown);
+            
+            if (parsedLine == null) {
+                parsedLine = parseListItem(lineOfMarkdown);
             }
 
-            if (theLine == null) {
-                theLine = p(lines[i]);
+            if (parsedLine == null) {
+                parsedLine = parseParagraph(lineOfMarkdown);
             }
 
-            if (theLine.matches("(<li>).*") && !theLine.matches("(<h).*") && !theLine.matches("(<p>).*") && !activeList) {
-                activeList = true;
-                result = result + "<ul>";
-                result = result + theLine;
-            } else if (!theLine.matches("(<li>).*") && activeList) {
-                activeList = false;
-                result = result + "</ul>";
-                result = result + theLine;
+            if (isUnorderedList(isActiveList, parsedLine)) {
+                isActiveList = true;
+                resultHtml.append("<ul>");
+                resultHtml.append(parsedLine);
+            } else if (!isListElement(parsedLine) && isActiveList) {
+                isActiveList = false;
+                resultHtml.append("</ul>");
+                resultHtml.append(parsedLine);
             } else {
-                result = result + theLine;
+                resultHtml.append(parsedLine);
             }
         }
 
-        if (activeList) {
-            result = result + "</ul>";
+        if (isActiveList) {
+            resultHtml.append("</ul>");
         }
 
-        return result;
+        return resultHtml.toString();
     }
 
-    protected String ph(String markdown) {
-        int count = 0;
+    private static boolean isUnorderedList(final boolean activeList, final String theLine) {
+        return isListElement(theLine) && !isHeaderElement(theLine) && !isParagraphElement(theLine) && !activeList;
+    }
+
+    private static boolean isParagraphElement(final String theLine) {
+        return theLine.matches("(<p>).*");
+    }
+
+    private static boolean isHeaderElement(final String theLine) {
+        return theLine.matches("(<h).*");
+    }
+
+    private static boolean isListElement(final String theLine) {
+        return theLine.matches("(<li>).*");
+    }
+
+    protected String parseHeader(final String markdown) {
+        int hashCount = 0;
 
         for (int i = 0; i < markdown.length() && markdown.charAt(i) == '#'; i++) {
-            count++;
+            hashCount++;
         }
 
-        if (count == 0) {
+        if (hashCount == 0) {
             return null;
         }
 
-        return "<h" + Integer.toString(count) + ">" + markdown.substring(count + 1) + "</h" + Integer.toString(count) + ">";
+        return "<h" + hashCount + ">" + markdown.substring(hashCount + 1) + "</h" + hashCount + ">";
     }
 
-    public String li(String markdown) {
+    public String parseListItem(final String markdown) {
         if (markdown.startsWith("*")) {
             String skipAsterisk = markdown.substring(2);
             String listItemString = parseSomeSymbols(skipAsterisk);
             return "<li>" + listItemString + "</li>";
         }
-
         return null;
     }
 
-    public String p(String markdown) {
+    public String parseParagraph(final String markdown) {
         return "<p>" + parseSomeSymbols(markdown) + "</p>";
     }
 
-    public String parseSomeSymbols(String markdown) {
+    public String parseSomeSymbols(final String markdown) {
+        String workingOn = parseBold(markdown);
+        return parseItalic(workingOn);
+    }
 
-        String lookingFor = "__(.+)__";
-        String update = "<strong>$1</strong>";
-        String workingOn = markdown.replaceAll(lookingFor, update);
+    private static String parseBold(final String markdown) {
+        String boldRegex = "__(.+)__";
+        String replacement = "<strong>$1</strong>";
+        return markdown.replaceAll(boldRegex, replacement);
+    }
 
-        lookingFor = "_(.+)_";
-        update = "<em>$1</em>";
-        return workingOn.replaceAll(lookingFor, update);
+    private static String parseItalic(final String workingOn) {
+        String italicRegex = "_(.+)_";
+        String replacement = "<em>$1</em>";
+        return workingOn.replaceAll(italicRegex, replacement);
     }
 }
