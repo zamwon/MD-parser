@@ -4,8 +4,17 @@ import java.util.Objects;
 
 public class MarkdownParser {
 
+    public static final String NEW_LINE = "\n";
+    public static final String OPEN_UL_TAG = "<ul>";
+    public static final String CLOSE_UL_TAG = "</ul>";
+    public static final String OPEN_LI_TAG = "<li>";
+    public static final String CLOSE_LI_TAG = "</li>";
+    public static final String OPEN_P_TAG = "<p>";
+    public static final String CLOSE_P_TAG = "</p>";
+
+
     public String parse(final String markdown) {
-        var lines = markdown.split("\n");
+        var lines = markdown.split(NEW_LINE);
         var resultHtml = new StringBuilder();
         var isToClose = false;
 
@@ -34,12 +43,12 @@ public class MarkdownParser {
     }
 
     private static void openUlTag(final StringBuilder resultHtml) {
-        resultHtml.append("<ul>");
+        resultHtml.append(OPEN_UL_TAG);
     }
 
     private void closeUlTag(final Boolean isToClose, final StringBuilder resultHtml) {
         if (Boolean.TRUE.equals(isToClose)) {
-            resultHtml.append("</ul>");
+            resultHtml.append(CLOSE_UL_TAG);
         }
     }
 
@@ -84,13 +93,13 @@ public class MarkdownParser {
         if (markdown.startsWith("*")) {
             var skipAsterisk = markdown.substring(2);
             var listItemString = parseTextStyles(skipAsterisk);
-            return "<li>" + listItemString + "</li>";
+            return OPEN_LI_TAG+ listItemString + CLOSE_LI_TAG;
         }
         return parseParagraph(markdown);
     }
 
     private String parseParagraph(final String markdown) {
-        return "<p>" + parseTextStyles(markdown) + "</p>";
+        return OPEN_P_TAG + parseTextStyles(markdown) + CLOSE_P_TAG;
     }
 
     private String parseTextStyles(final String markdown) {
