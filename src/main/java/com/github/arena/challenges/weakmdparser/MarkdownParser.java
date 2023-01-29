@@ -25,7 +25,7 @@ public class MarkdownParser {
                 openUlTag(resultHtml);
                 isToClose = true;
 
-            } else if (Boolean.FALSE.equals(isListElement(parsedLine) && isToClose)) {
+            } else if (!isLiAndShouldBeClosed(isToClose, parsedLine)) {
                 closeUlTag(isToClose, resultHtml);
                 isToClose = false;
 
@@ -38,11 +38,15 @@ public class MarkdownParser {
         return resultHtml.toString();
     }
 
+    private boolean isLiAndShouldBeClosed(final boolean isToClose, final String parsedLine) {
+        return isLiElement(parsedLine) && isToClose;
+    }
+
     private void appendParsedLine(StringBuilder resultHtml, String parsedLine) {
         resultHtml.append(parsedLine);
     }
 
-    private static void openUlTag(final StringBuilder resultHtml) {
+    private void openUlTag(final StringBuilder resultHtml) {
         resultHtml.append(OPEN_UL_TAG);
     }
 
@@ -53,18 +57,18 @@ public class MarkdownParser {
     }
 
     private boolean isUlElement(final String theLine, final boolean activeList) {
-        return isListElement(theLine) && !isHeaderElement(theLine) && !isParagraphElement(theLine) && !activeList;
+        return isLiElement(theLine) && !isHeaderElement(theLine) && !isParagraphElement(theLine) && !activeList;
     }
 
-    private Boolean isParagraphElement(final String theLine) {
+    private boolean isParagraphElement(final String theLine) {
         return theLine.matches("(<p>).*");
     }
 
-    private Boolean isHeaderElement(final String theLine) {
+    private boolean isHeaderElement(final String theLine) {
         return theLine.matches("(<h).*");
     }
 
-    private Boolean isListElement(final String theLine) {
+    private boolean isLiElement(final String theLine) {
         return theLine.matches("(<li>).*");
     }
 
@@ -93,7 +97,7 @@ public class MarkdownParser {
         if (markdown.startsWith("*")) {
             var skipAsterisk = markdown.substring(2);
             var listItemString = parseTextStyles(skipAsterisk);
-            return OPEN_LI_TAG+ listItemString + CLOSE_LI_TAG;
+            return OPEN_LI_TAG + listItemString + CLOSE_LI_TAG;
         }
         return parseParagraph(markdown);
     }
