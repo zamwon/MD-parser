@@ -5,52 +5,45 @@ import java.util.Objects;
 public class MarkdownParser {
 
     public String parse(final String markdown) {
-
         var lines = markdown.split("\n");
         var resultHtml = new StringBuilder();
-        var isActiveList = false;
+        var isToClose = false;
 
         for (String lineOfMarkdown : lines) {
-
             var parsedLine = parseHeader(lineOfMarkdown);
 
-            if (Objects.isNull(parsedLine)) {
-                parsedLine = parseListItem(lineOfMarkdown);
+            if (isUlElement(parsedLine, isToClose)) {
+                openUlTag(resultHtml);
+                isToClose = true;
+
+            } else if (Boolean.FALSE.equals(isListElement(parsedLine) && isToClose)) {
+                closeUlTag(isToClose, resultHtml);
+                isToClose = false;
+
             }
-
-            if (Objects.isNull(parsedLine)) {
-                parsedLine = parseParagraph(lineOfMarkdown);
-            }
-
-            if (isUnorderedList(isActiveList, parsedLine)) {
-
-                isActiveList = true;
-                resultHtml.append("<ul>");
-                resultHtml.append(parsedLine);
-
-            } else if (Boolean.FALSE.equals(isListElement(parsedLine))) {
-
-                closeUlTag(isActiveList, resultHtml);
-                isActiveList = false;
-                resultHtml.append(parsedLine);
-
-            } else {
-                resultHtml.append(parsedLine);
-            }
+            appendParsedLine(resultHtml, parsedLine);
         }
 
-        closeUlTag(isActiveList, resultHtml);
+        closeUlTag(isToClose, resultHtml);
 
         return resultHtml.toString();
     }
-    private void closeUlTag(final Boolean isToClose, final StringBuilder resultHtml) {
 
+    private void appendParsedLine(StringBuilder resultHtml, String parsedLine) {
+        resultHtml.append(parsedLine);
+    }
+
+    private static void openUlTag(final StringBuilder resultHtml) {
+        resultHtml.append("<ul>");
+    }
+
+    private void closeUlTag(final Boolean isToClose, final StringBuilder resultHtml) {
         if (Boolean.TRUE.equals(isToClose)) {
             resultHtml.append("</ul>");
         }
     }
 
-    private boolean isUnorderedList(final boolean activeList, final String theLine) {
+    private boolean isUlElement(final String theLine, final boolean activeList) {
         return isListElement(theLine) && !isHeaderElement(theLine) && !isParagraphElement(theLine) && !activeList;
     }
 
@@ -67,9 +60,9 @@ public class MarkdownParser {
     }
 
     private String parseHeader(final String markdown) {
-
         final var hashCount = countHashAmount(markdown);
-        return Objects.isNull(hashCount) ? null : "<h" + hashCount + ">" + markdown.substring(hashCount + 1) + "</h" + hashCount + ">";
+        return Objects.isNull(hashCount) ?
+            parseListItem(markdown) : "<h" + hashCount + ">" + markdown.substring(hashCount + 1) + "</h" + hashCount + ">";
     }
 
     private Integer countHashAmount(final String markdown) {
@@ -79,20 +72,16 @@ public class MarkdownParser {
             hashCount++;
         }
 
-        if (hashCount == 0) {
-            return null;
-        }
-        return hashCount;
+        return hashCount == 0 ? null : hashCount;
     }
 
     private String parseListItem(final String markdown) {
-
         if (markdown.startsWith("*")) {
             var skipAsterisk = markdown.substring(2);
             var listItemString = parseTextStyles(skipAsterisk);
             return "<li>" + listItemString + "</li>";
         }
-        return null;
+        return parseParagraph(markdown);
     }
 
     private String parseParagraph(final String markdown) {
