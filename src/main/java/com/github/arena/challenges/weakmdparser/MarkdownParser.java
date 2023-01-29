@@ -61,8 +61,13 @@ public class MarkdownParser {
 
     private String parseHeader(final String markdown) {
         final var hashCount = countHashAmount(markdown);
-        return Objects.isNull(hashCount) ?
-            parseListItem(markdown) : "<h" + hashCount + ">" + markdown.substring(hashCount + 1) + "</h" + hashCount + ">";
+        if (Objects.isNull(hashCount)) {
+            return parseListItem(markdown);
+        } else {
+            var openingHeaderTag = "<h" + hashCount + ">";
+            var closingHeaderTag = "</h" + hashCount + ">";
+            return openingHeaderTag + markdown.substring(hashCount + 1) + closingHeaderTag;
+        }
     }
 
     private Integer countHashAmount(final String markdown) {
